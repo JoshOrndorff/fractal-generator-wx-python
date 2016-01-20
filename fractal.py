@@ -8,6 +8,9 @@ class FractalFrame(wx.Frame):
   def __init__(self, title):
     super(FractalFrame, self).__init__(None, title=title, size=(600, 500))
     
+    self.verticies = []
+    self.points = []
+    
     # Set up the frame icon (http://www.programmingforums.org/thread15370.html)
     #favicon = wx.Icon('favicon.ico', wx.BITMAP_TYPE_ICO, 16, 16)
     #self.SetIcon(favicon)
@@ -19,8 +22,10 @@ class FractalFrame(wx.Frame):
     
     # The list of verticies
     wx.StaticText(self, label="Verticies:", pos=(30, 270))
-    self.txtVerticies = wx.TextCtrl(self, pos=(30, 290), size=(250, 150), style=wx.TE_MULTILINE)
+    self.txtVerticies = wx.TextCtrl(self, pos=(30, 290), size=(250, 150), style=wx.TE_MULTILINE | wx.TE_RICH)
+    self.txtVerticies.Bind(wx.EVT_KILL_FOCUS, self.OnVerticiesEntered)
     self.txtVerticies.SetValue("200, 40\n300, 200\n500, 100")
+    self.OnVerticiesEntered(None)
     
     # Points field
     wx.StaticText(self, label="Points:", pos=(320, 320))
@@ -32,10 +37,6 @@ class FractalFrame(wx.Frame):
     btnGenerate = wx.Button(self, label="Generate", pos=(400, 380))
     btnGenerate.Bind(wx.EVT_BUTTON, self.OnGenerate)
     
-    # The computation variables
-    self.points = []
-    self.verticies = []
-    
     # Pass repaint events along to the panel
     self.Bind(wx.EVT_PAINT, self.OnPaint)
     
@@ -43,25 +44,41 @@ class FractalFrame(wx.Frame):
     self.Centre()
     self.Show()
     
+  def OnVerticiesEntered(self, e):
+    #TODO Make it red when they are no good: http://stackoverflow.com/questions/8588287/wxpython-how-to-change-the-font-color-in-textctrl-with-a-checkbox
+    
+    self.verticies = []
+    x = 0
+    y = 0
+    
+    readText = self.txtVerticies.GetValue().split('\n')
+    self.txtVerticies.SetValue('')
+    
+    for line in readText:
+      if line.count(',') != 1:
+        # Not exactly one comma, make line red
+        self.txtVerticies.SetForegroundColour(wx.RED)
+      try:
+        #TODO Also validate that there is exactly one comma
+        x = int(line.split(',')[0].strip())
+        y = int(line.split(',')[1].strip())
+      except ValueError:
+        # Not numbers, make line red
+        self.txtVerticies.SetForegroundColour(wx.RED)
+      if x > 100 or y > 100 or x < 0 or y < 0:
+        # Numbers not in proper range, make line red
+        self.txtVerticies.SetForegroundColour(wx.RED)
+        
+      self.txtVerticies.AppendText(line + '\n')
+      self.txtVerticies.SetForegroundColour(wx.BLACK)
+      
+      # If converted, append it to the list of verticies
+      self.verticies.append(wx.Point(x, y))
+    
   def OnPaint(self, e):
     self.panel.Refresh(self.verticies, self.points)
   
   def OnGenerate(self, e):
-    # Retrieve the verticies
-    self.verticies = []
-    
-    #TODO Make sure the point data is valid. I'm starting to think there is a better control to use.
-    # Or maybe I should validate that data as soon as the textchanged event happens?
-    for line in self.txtVerticies.GetValue().split('\n'):
-      x = int(line.split(',')[0].strip())
-      y = int(line.split(',')[1].strip())
-      
-      # If converted, append it to the list of verticies
-      self.verticies.append(wx.Point(x, y))
-      
-      #TODO Or if not, inform the user by one of the following methods:
-      #Message Box, Static Text, Turning the invalid item(s) red. That's a good one.
-    
     
     # Reset points and choose a random first point
     self.points = []
