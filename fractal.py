@@ -109,7 +109,7 @@ class FractalFrame(wx.Frame):
     
 class FractalPanel(wx.Panel):
   def __init__(self, *args, **kwargs):
-    wx.Panel.__init__(self, *args, **kwargs) #TODO Why does super not seem to work here?
+    super(FractalPanel, self).__init__(*args, **kwargs)
     
     # Set the circle radius
     self.vertexSize = 5
@@ -124,6 +124,7 @@ class FractalPanel(wx.Panel):
   
   def Refresh(self, verticies, points):
     dc = wx.PaintDC(self)
+    dc.Clear()
     
     # Draw the verticies
     dc.SetBrush(self.vbrush)
