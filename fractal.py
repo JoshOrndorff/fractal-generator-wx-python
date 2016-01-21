@@ -21,10 +21,7 @@ class FractalFrame(wx.Frame):
     
     # The list of verticies
     wx.StaticText(self, label="Verticies:", pos=(30, 270))
-    self.txtVerticies = wx.TextCtrl(self, pos=(30, 290), size=(250, 150), style=wx.TE_MULTILINE | wx.TE_RICH)
-    self.txtVerticies.Bind(wx.EVT_KILL_FOCUS, self.OnVerticiesEntered)
-    self.txtVerticies.SetValue("20, 40\n70, 20\n50, 86")
-    self.OnVerticiesEntered(None)
+    self.txtVerticies = VertextCtrl(self, pos=(30, 290), size=(250, 150))
     
     # Points field
     wx.StaticText(self, label="Points:", pos=(320, 320))
@@ -36,49 +33,9 @@ class FractalFrame(wx.Frame):
     btnGenerate = wx.Button(self, label="Generate", pos=(400, 380))
     btnGenerate.Bind(wx.EVT_BUTTON, self.OnGenerate)
     
-    # Pass repaint events along to the panel
-    self.Bind(wx.EVT_PAINT, self.OnPaint)
-    
     # Make the window appear
     self.Centre()
     self.Show()
-    
-  def OnVerticiesEntered(self, e):
-    #TODO Make it red when they are no good: http://stackoverflow.com/questions/8588287/wxpython-how-to-change-the-font-color-in-textctrl-with-a-checkbox
-    
-    self.verticies = []
-    x = 0
-    y = 0
-    
-    readText = self.txtVerticies.GetValue().split('\n')
-    self.txtVerticies.SetValue('')
-    
-    for line in readText:
-      if line.count(',') != 1:
-        # Not exactly one comma, make line red
-        self.txtVerticies.SetForegroundColour(wx.RED)
-      try:
-        x = float(line.split(',')[0].strip())
-        y = float(line.split(',')[1].strip())
-      except ValueError:
-        # Not numbers, make line red
-        self.txtVerticies.SetForegroundColour(wx.RED)
-      if x > 100 or y > 100 or x < 0 or y < 0:
-        # Numbers not in proper range, make line red
-        self.txtVerticies.SetForegroundColour(wx.RED)
-      
-      # If the line isn't blank, write it back to the TextCtrl
-      if line.strip() != '':
-        self.txtVerticies.AppendText(line + '\n')
-        
-      # Default the cursor to black for next time
-      self.txtVerticies.SetForegroundColour(wx.BLACK)
-      
-      # If converted, append it to the list of verticies
-      self.verticies.append((x / 100.0, y / 100.0))
-    
-  def OnPaint(self, e):
-    self.panel.Refresh(self.verticies, self.points)
   
   def OnGenerate(self, e):
     
@@ -97,15 +54,55 @@ class FractalFrame(wx.Frame):
     # Calculate each subsequent point
     while len(self.points) < numPoints:
       # Choose a random vertex
-      vertex = choice(self.verticies)
+      vertex = choice(self.txtVerticies.verticies)
       
       # Calculate the midpoint between them
       newPoint = ((self.points[-1][0] + vertex[0]) / 2, (self.points[-1][1] + vertex[1]) / 2)
       self.points.append(newPoint)
       
-    self.panel.Refresh(self.verticies, self.points)
+    self.panel.Refresh(self.txtVerticies.verticies, self.points)
       
       
+class VertextCtrl(wx.TextCtrl):
+  def __init__(self, *args, **kwargs):
+    super(VertextCtrl, self).__init__(*args, style = wx.TE_MULTILINE | wx.TE_RICH, **kwargs)
+    
+    self.SetValue("20, 40\n70, 20\n50, 86")
+    
+    self.Bind(wx.EVT_KILL_FOCUS, self.OnVerticiesEntered)
+    self.OnVerticiesEntered(None)
+    
+  def OnVerticiesEntered(self, e):
+    self.verticies = []
+    x = 0
+    y = 0
+    
+    readText = self.GetValue().split('\n')
+    self.SetValue('')
+    
+    for line in readText:
+      if line.count(',') != 1:
+        # Not exactly one comma, make line red
+        self.SetForegroundColour(wx.RED)
+      try:
+        x = float(line.split(',')[0].strip())
+        y = float(line.split(',')[1].strip())
+      except ValueError:
+        # Not numbers, make line red
+        self.SetForegroundColour(wx.RED)
+      if x > 100 or y > 100 or x < 0 or y < 0:
+        # Numbers not in proper range, make line red
+        self.SetForegroundColour(wx.RED)
+      
+      # If the line isn't blank, write it back to the TextCtrl
+      if line.strip() != '':
+        self.AppendText(line + '\n')
+        
+      # Default the cursor to black for next time
+      self.SetForegroundColour(wx.BLACK)
+      
+      # If converted, append it to the list of verticies
+      self.verticies.append((x / 100.0, y / 100.0))
       
 
     
@@ -123,6 +120,10 @@ class FractalPanel(wx.Panel):
     # Setup pens for verticies and points
     self.vbrush = wx.Brush('BLUE')
     self.pbrush = wx.Brush('WHITE')
+  
+  #TODO Should this panel have its own copy of the verticies and points that are currently displayed for things like resizing?
+  # Yes. It occurs when I resize the window to cover part of the panel, then make it bigger again.
+  # But still, it doesn't need to be redrawn every time the frame is redrawn.
   
   def Refresh(self, verticies, points):
     dc = wx.PaintDC(self)
