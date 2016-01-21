@@ -1,8 +1,7 @@
 #!/usr/bin/python
 
 import wx
-from random import choice, randint
-from re import match
+from random import choice, random
 
 class FractalFrame(wx.Frame):
   def __init__(self, title):
@@ -24,7 +23,7 @@ class FractalFrame(wx.Frame):
     wx.StaticText(self, label="Verticies:", pos=(30, 270))
     self.txtVerticies = wx.TextCtrl(self, pos=(30, 290), size=(250, 150), style=wx.TE_MULTILINE | wx.TE_RICH)
     self.txtVerticies.Bind(wx.EVT_KILL_FOCUS, self.OnVerticiesEntered)
-    self.txtVerticies.SetValue("200, 40\n300, 200\n500, 100")
+    self.txtVerticies.SetValue("20, 40\n70, 20\n50, 86")
     self.OnVerticiesEntered(None)
     
     # Points field
@@ -59,21 +58,24 @@ class FractalFrame(wx.Frame):
         # Not exactly one comma, make line red
         self.txtVerticies.SetForegroundColour(wx.RED)
       try:
-        #TODO Also validate that there is exactly one comma
-        x = int(line.split(',')[0].strip())
-        y = int(line.split(',')[1].strip())
+        x = float(line.split(',')[0].strip())
+        y = float(line.split(',')[1].strip())
       except ValueError:
         # Not numbers, make line red
         self.txtVerticies.SetForegroundColour(wx.RED)
       if x > 100 or y > 100 or x < 0 or y < 0:
         # Numbers not in proper range, make line red
         self.txtVerticies.SetForegroundColour(wx.RED)
+      
+      # If the line isn't blank, write it back to the TextCtrl
+      if line.strip() != '':
+        self.txtVerticies.AppendText(line + '\n')
         
-      self.txtVerticies.AppendText(line + '\n')
+      # Default the cursor to black for next time
       self.txtVerticies.SetForegroundColour(wx.BLACK)
       
       # If converted, append it to the list of verticies
-      self.verticies.append(wx.Point(x, y))
+      self.verticies.append((x / 100.0, y / 100.0))
     
   def OnPaint(self, e):
     self.panel.Refresh(self.verticies, self.points)
@@ -82,7 +84,7 @@ class FractalFrame(wx.Frame):
     
     # Reset points and choose a random first point
     self.points = []
-    self.points.append(wx.Point(randint(0, 100), randint(0, 100)))
+    self.points.append((random(), random()))
     
     #TODO Use a slider for number of points
     try:
@@ -94,11 +96,11 @@ class FractalFrame(wx.Frame):
     
     # Calculate each subsequent point
     while len(self.points) < numPoints:
-      #Choose a random vertex
+      # Choose a random vertex
       vertex = choice(self.verticies)
       
       # Calculate the midpoint between them
-      newPoint = wx.Point((self.points[-1].x + vertex.x) / 2, (self.points[-1].y + vertex.y) / 2)
+      newPoint = ((self.points[-1][0] + vertex[0]) / 2, (self.points[-1][1] + vertex[1]) / 2)
       self.points.append(newPoint)
       
     self.panel.Refresh(self.verticies, self.points)
@@ -126,15 +128,17 @@ class FractalPanel(wx.Panel):
     dc = wx.PaintDC(self)
     dc.Clear()
     
+    w, h = self.GetSizeTuple()
+    
     # Draw the verticies
     dc.SetBrush(self.vbrush)
     for vertex in verticies:
-      dc.DrawCircle(vertex.x, vertex.y, self.vertexSize) #TODO Why can this not be done with a point object?
+      dc.DrawCircle(vertex[0] * w, vertex[1] * h, self.vertexSize) #TODO Why can this not be done with a point object?
     
     # Draw the points
     dc.SetBrush(self.pbrush)
     for point in points:
-      dc.DrawCircle(point.x, point.y, self.pointSize)
+      dc.DrawCircle(point[0] * w, point[1] * h, self.pointSize)
 
 if __name__ == '__main__':
   app = wx.App()
