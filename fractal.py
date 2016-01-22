@@ -14,23 +14,28 @@ class FractalFrame(wx.Frame):
     #favicon = wx.Icon('favicon.ico', wx.BITMAP_TYPE_ICO, 16, 16)
     #self.SetIcon(favicon)
     
-    #TODO Make sizers after the main code works
+    # Make the big sizer to contain the drawing panel and the everything else panel
+    vbox = wx.BoxSizer(wx.VERTICAL)
     
-    # The panel for drawing
-    self.panel = FractalPanel(self, pos=(10,10), size=(580, 250))
+    self.panel = FractalPanel(self)
+    vbox.Add(self.panel, 1, wx.EXPAND, 5)
+    
+    eePanel = wx.Panel(self, size = (600, 200))
+    vbox.Add(eePanel, 0, wx.EXPAND, 15)
+    
+    self.SetSizer(vbox)
     
     # The list of verticies
-    wx.StaticText(self, label="Verticies:", pos=(30, 270))
-    self.txtVerticies = VertextCtrl(self, pos=(30, 290), size=(250, 150))
+    wx.StaticText(eePanel, label="Verticies:", pos=(30, 17))
+    self.txtVerticies = VertextCtrl(eePanel, pos=(30, 40), size=(250, 150))
     
     # Points field
-    wx.StaticText(self, label="Points:", pos=(320, 320))
-    self.txtPoints = wx.TextCtrl(self, pos=(380, 300), size=(200, 50))
-    self.txtPoints.SetValue("100")
-    #TODO Advanced option: manually choose the original point
+    wx.StaticText(eePanel, label="Points:", pos=(320, 63))
+    self.txtPoints = wx.TextCtrl(eePanel, pos=(380, 50), size=(150, 50))
+    self.txtPoints.SetValue("1000")
     
     # Generate Button
-    btnGenerate = wx.Button(self, label="Generate", pos=(400, 380))
+    btnGenerate = wx.Button(eePanel, label="Generate", pos=(400, 130))
     btnGenerate.Bind(wx.EVT_BUTTON, self.OnGenerate)
     
     # Make the window appear
@@ -110,36 +115,42 @@ class FractalPanel(wx.Panel):
   def __init__(self, *args, **kwargs):
     super(FractalPanel, self).__init__(*args, **kwargs)
     
-    # Set the circle radius
-    self.vertexSize = 5
-    self.pointSize  = 3
+    # Bind the repaint event and initialize variables
+    self.Bind(wx.EVT_PAINT, self.OnPaint)
+    self.verticies = []
+    self.points = []
     
     # Make background green
     self.SetBackgroundColour('GREEN')
     
-    # Setup pens for verticies and points
-    self.vbrush = wx.Brush('BLUE')
-    self.pbrush = wx.Brush('WHITE')
-  
-  #TODO Should this panel have its own copy of the verticies and points that are currently displayed for things like resizing?
-  # Yes. It occurs when I resize the window to cover part of the panel, then make it bigger again.
-  # But still, it doesn't need to be redrawn every time the frame is redrawn.
+    # Set the plotting properties
+    self.vertexSize = 5
+    self.pointSize  = 2
+    self.vertexBrush = wx.Brush('BLUE')
+    self.pointBrush  = wx.Brush('WHITE')
   
   def Refresh(self, verticies, points):
+    self.verticies = verticies
+    self.points = points
+    
+    self.OnPaint(None)
+  
+  def OnPaint(self, e):
     dc = wx.PaintDC(self)
     dc.Clear()
     
     w, h = self.GetSizeTuple()
     
     # Draw the verticies
-    dc.SetBrush(self.vbrush)
-    for vertex in verticies:
-      dc.DrawCircle(vertex[0] * w, vertex[1] * h, self.vertexSize) #TODO Why can this not be done with a point object?
+    dc.SetBrush(self.vertexBrush)
+    for vertex in self.verticies:
+      dc.DrawCircle(vertex[0] * w, vertex[1] * h, self.vertexSize)
     
     # Draw the points
-    dc.SetBrush(self.pbrush)
-    for point in points:
+    dc.SetBrush(self.pointBrush)
+    for point in self.points:
       dc.DrawCircle(point[0] * w, point[1] * h, self.pointSize)
+
 
 if __name__ == '__main__':
   app = wx.App()
