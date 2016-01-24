@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import wx
+from wx.lib.intctrl import IntCtrl
 from random import choice, random
 
 class FractalFrame(wx.Frame):
@@ -31,8 +32,8 @@ class FractalFrame(wx.Frame):
     
     # Points field
     wx.StaticText(eePanel, label="Points:", pos=(320, 63))
-    self.txtPoints = wx.TextCtrl(eePanel, pos=(380, 50), size=(150, 50))
-    self.txtPoints.SetValue("1000")
+    self.txtPoints = IntCtrl(eePanel, pos=(380, 50), size=(150, 50))
+    self.txtPoints.SetValue(1000)
     
     # Generate Button
     btnGenerate = wx.Button(eePanel, label="Generate", pos=(400, 130))
@@ -48,13 +49,8 @@ class FractalFrame(wx.Frame):
     self.points = []
     self.points.append((random(), random()))
     
-    #TODO Use a slider for number of points
-    try:
-      numPoints = int(float(self.txtPoints.GetValue()))
-      self.txtPoints.SetValue(str(numPoints))
-      
-    except ValueError:
-      print("Number of points must be an int.") #TODO Better error checking
+    numPoints = self.txtPoints.GetValue()
+
     
     # Calculate each subsequent point
     while len(self.points) < numPoints:
